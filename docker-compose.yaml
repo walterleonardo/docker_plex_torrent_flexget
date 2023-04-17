@@ -1,0 +1,91 @@
+version: "3.7"
+services:
+
+  samba:
+    image: dperson/samba # no hay tag con versiones, solo latest
+    restart: always
+    command: >
+            -w "WORKGROUP"
+            -u "usuario;password"
+            -s "downloads;/downloads;yes;yes;yes;all;none;;Downloading files"
+            -s "media;/media;yes;no;yes;all;none;;Downloaded files"
+    stdin_open: true
+    tty: true
+    # incluimos las variables de entorno desde el archivo .env
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Madrid
+      # con el siguiente comando podemos ver que ID tenemos $ id `whoami`
+      - USERID=1000
+      - GROUPID=1000
+    ports:
+      - 137:137/udp
+      - 138:138/udp     
+      - 139:130/tcp
+      - 445:445/tcp
+    volumes:
+      - ${MEDIA}:/media
+      - ${STORAGE}/torrents:/downloads
+
+  plex:
+    container_name: plex
+    image: plexinc/pms-docker
+    # incluimos las variables de entorno desde el archivo .env
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Madrid
+      # Si quieres poder conectarte con tu cuenta necesitas el tocken
+      # - PLEX_CLAIM=
+      # si necesitamos ejecutar un usuario especifico dentro del contenedor haremos lo siguiente
+      # con el siguiente comando podemos ver que ID tenemos $ id `whoami`
+      # - PLEX_UID=
+      # - PLEX_GID=
+      # podemos permitir por defecto una red, nuestra red interna local
+      # - ALLOWED_NETWORKS=
+    volumes:
+      - ${STORAGE}/plex_config:/config
+      - ${MEDIA}:/data
+      - ${STORAGE}/tmp:/transcode
+    restart: unless-stopped
+    network_mode: "host" # Solo funciona en Linux
+
+  transmission:
+    image : jaymoulin/transmission:latest
+    command: transmission-daemon -f -g /config
+    env_file:
+      - .env
+    volumes:
+      - ./transmission:/config
+      - ${STORAGE}/torrents:/downloads
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    expose:
+      - 9091
+    # si no trabajamos con IP V6 mejor lo deshabilitamos
+    sysctls:
+      - "net.ipv6.conf.all.disable_ipv6=0"
+    restart: unless-stopped
+
+  flexget:
+    image: wiserain/flexget:latest
+    # incluimos las variables de entorno desde el archivo .env
+    env_file:
+      - .env
+    volumes:
+      - ./flexget:/config
+      - ./flexget/custom-cont-init.d:/custom-cont-init.d
+      - ${STORAGE}/torrents:/downloads
+      - ${MEDIA}:/storage
+    ports:
+      - 5050:5050
+    environment:
+      - TZ=Europe/Madrid
+      - PUID=1001
+      - PGID=1001
+      - TORRENT_PLUGIN=transmission
+      - FG_WEBUI_PASSWD=P4SsW0Rd123*@@@ # la puedes cambiar por la que quieras, tiene que ser complicada sino no iniciará flexget
+    restart: unless-stopped
