@@ -1,6 +1,9 @@
-# Utilizaremos un repo base, de un proyecto creado por PELADO NERDS, pero con una modifiación, utilizando la imagen plex original compilada para la plataforma ARM
+# Utilizaremos un repo base, de un proyecto creado por PELADO NERDS, pero con una modifiación, utilizando la imagen plex original compilada para la plataforma ARM armv7 para 32bits y arm64 para 64bits
 
 docker build -t plexinc/pms-docker:latest -f Dockerfile.armv7 . # or arm64
+
+Si no funciona utilicen el Buildx
+sudo docker buildx build -t plexinc/pms-docker:latest --platform linux/arm64 .
 
 
 # Plex sobre Docker en Raspberry
@@ -55,6 +58,11 @@ echo "deb [arch=armhf] https://download.docker.com/linux/debian \
     sudo tee /etc/apt/sources.list.d/docker.list
 sudo apt-get update && sudo apt-get install -y --no-install-recommends docker-ce docker-compose
 ```
+Si no funciona o da error probar directamente con:
+'''
+sudo apt install docker
+'''
+Ya las versiones y repositorios incluyen el docker en sus listas.
 
 Modificá tu docker config para que guarde los temps/imagenes en el disco:
 
@@ -81,10 +89,15 @@ fdisk -l
 # pueden usar el siguiente comando para obtener el UUID
 ls -l /dev/disk/by-uuid/
 # y simplemente montamos el disco en el archivo /etc/fstab (pueden hacerlo por el editor que les guste o por consola)
-echo UUID="UUID" /mnt/storage ntfs-3g defaults,auto 0 0 | sudo tee -a /etc/fstab
+echo UUID=XXXXXX-XXXX-XXX-XXX /mnt/storage ext4 defaults,auto,users,rw,nofail 0 0 | sudo tee -a /etc/fstab
 # por último para que lea el archivo fstab
 mount -a (o reiniciar)
 ```
+
+## Debermos compilar el flex para nuestra plataforma... linux/armv7 (32bits) o linux/arm64 (64bits), en nuestro caso como tenemos un raspberry pi 3 es de 64 bits.
+'''
+sudo docker build -t plexinc/pms-docker:latest -f Dockerfile.arm64 .
+'''
 
 ## Cómo correrlo
 
@@ -100,3 +113,8 @@ Tenemos que crear el directorio a mano. Para que inicie el flexget
 
 Las raspberry son computadoras excelentes pero no muy potentes, y plex por defecto intenta transcodear los videos para ahorrar ancho de banda (en mi opinión, una HORRIBLE idea), y la chiquita raspberry no se aguanta este transcodeo "al vuelo", entonces hay que configurar los CLIENTES de plex (si, hay que hacerlo en cada cliente) para que intente reproducir el video en la máxima calidad posible, evitando transcodear y pasando el video derecho a tu tele o Chromecast sin procesar nada, de esta forma, yo he tenido 3 reproducciones concurrentes sin ningún problema. En android y iphone las opciones son muy similares.
 
+# info adicional y util.
+Para montar un disco remoto con samba.
+'''
+sudo mount -t cifs -o username=walterleonardo //10.38.70.47/Public /mnt/temp/
+'''
