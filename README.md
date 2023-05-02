@@ -94,7 +94,7 @@ echo UUID=XXXXXX-XXXX-XXX-XXX /mnt/storage ext4 defaults,auto,users,rw,nofail 0 
 mount -a (o reiniciar)
 ```
 
-## Debermos compilar el flex para nuestra plataforma... linux/armv7 (32bits) o linux/arm64 (64bits), en nuestro caso como tenemos un raspberry pi 3 es de 64 bits.
+## Deberemos compilar el flex para nuestra plataforma... linux/armv7 (32bits) o linux/arm64 (64bits), en nuestro caso como tenemos un raspberry pi 3 es de 64 bits.
 '''
 sudo docker build -t plexinc/pms-docker:latest -f Dockerfile.arm64 .
 '''
